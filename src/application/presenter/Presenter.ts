@@ -1,5 +1,3 @@
-import { Output } from "../usecase/GenerateInvoices";
-
-export default interface Presenter {
-	present (output: Output[]): any;
+export default interface Presenter<Input = any, Output = any> {
+	present (output: Input): Output;
 }
