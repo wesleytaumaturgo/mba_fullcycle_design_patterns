@@ -4,6 +4,7 @@ import ContractDatabaseRepository from "../src/infra/repository/ContractDatabase
 import ContractRepository from "../src/application/repository/ContractRepository";
 import DatabaseConnection from "../src/infra/database/DatabaseConnection";
 import DynamicPresenterFactory from "../src/infra/presenter/DynamicPresenterFactory";
+import GetInvoices from "../src/application/usecase/GetInvoices";
 import InvoiceDatabaseRepository from "../src/infra/repository/InvoiceDatabaseRepository";
 import Mediator from "../src/infra/mediator/Mediator";
 import PgPromiseAdapter from "../src/infra/database/PgPromiseAdapter";
@@ -14,6 +15,7 @@ const UNKNOWN_CONTRACT_ID = "00000000-0000-0000-0000-000000000000";
 let connection: DatabaseConnection;
 let mediator: Mediator;
 let closeInvoicing: CloseInvoicing;
+let getInvoices: GetInvoices;
 
 async function countInvoices (month: number, year: number, type: string) {
 	const [row] = await connection.query("select count(*) as total from branas.invoice where month = $1 and year = $2 and type = $3", [month, year, type]);
@@ -33,6 +35,7 @@ beforeEach(() => {
 		new DynamicPresenterFactory(),
 		mediator
 	);
+	getInvoices = new GetInvoices(new InvoiceDatabaseRepository(connection), new DynamicPresenterFactory());
 });
 
 afterEach(async () => {
@@ -121,4 +124,37 @@ test("Deve remover as faturas antigas quando o período não gera faturas", asyn
 	const output = await closeInvoicing.execute({ month: 3, year: 2023, type: "cash" });
 	expect(output).toEqual([]);
 	expect(await countInvoices(3, 2023, "cash")).toBe(0);
+});
+
+test("Deve consultar em seguida as faturas do período fechado", async function () {
+	await clearPeriod(1, 2022, "accrual");
+	await closeInvoicing.execute({ month: 1, year: 2022, type: "accrual" });
+	const output = await getInvoices.execute({ month: 1, year: 2022, type: "accrual" });
+	expect(output).toEqual([{ date: new Date("2022-01-01T13:00:00Z"), amount: 500 }]);
+});
+
+test("Deve devolver lista vazia para período sem faturas", async function () {
+	await clearPeriod(4, 2023, "cash");
+	const output = await getInvoices.execute({ month: 4, year: 2023, type: "cash" });
+	expect(output).toEqual([]);
+});
+
+test("Deve ordenar as faturas consultadas por data", async function () {
+	await clearPeriod(5, 2023, "accrual");
+	// inseridas fora de ordem: a ordem de inserção não pode ser confundida com a ordem por data
+	await connection.query("insert into branas.invoice (id_contract, month, year, type, date, amount) values ($1, 5, 2023, 'accrual', '2023-05-20T10:00:00', 200)", [SEED_CONTRACT_ID]);
+	await connection.query("insert into branas.invoice (id_contract, month, year, type, date, amount) values ($1, 5, 2023, 'accrual', '2023-05-05T10:00:00', 100)", [SEED_CONTRACT_ID]);
+	const output = await getInvoices.execute({ month: 5, year: 2023, type: "accrual" });
+	expect(output).toEqual([
+		{ date: new Date("2023-05-05T13:00:00Z"), amount: 100 },
+		{ date: new Date("2023-05-20T13:00:00Z"), amount: 200 }
+	]);
+	await clearPeriod(5, 2023, "accrual");
+});
+
+test("Deve responder csv na consulta", async function () {
+	await clearPeriod(1, 2022, "cash");
+	await closeInvoicing.execute({ month: 1, year: 2022, type: "cash" });
+	const output = await getInvoices.execute({ month: 1, year: 2022, type: "cash", format: "csv" });
+	expect(output).toBe("2022-01-05;6000");
 });

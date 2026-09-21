@@ -15,4 +15,9 @@ export default class InvoiceDatabaseRepository implements InvoiceRepository {
 		});
 	}
 
+	async listByPeriod(month: number, year: number, type: string): Promise<InvoiceData[]> {
+		const rows = await this.connection.query("select id_contract, date, amount from branas.invoice where month = $1 and year = $2 and type = $3 order by date", [month, year, type]);
+		return rows.map((row: any) => ({ idContract: row.id_contract, date: row.date, amount: parseFloat(row.amount) }));
+	}
+
 }
