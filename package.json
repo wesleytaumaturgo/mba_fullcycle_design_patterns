@@ -3,6 +3,10 @@
   "version": "1.0.0",
   "main": "index.js",
   "license": "MIT",
+  "scripts": {
+    "start": "TZ=America/Sao_Paulo ts-node src/main.ts",
+    "test": "TZ=America/Sao_Paulo jest"
+  },
   "dependencies": {
     "@types/express": "^4.17.17",
     "@types/jest": "^29.5.1",
