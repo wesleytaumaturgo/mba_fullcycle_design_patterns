@@ -136,6 +136,18 @@ Resposta:
 Simulação: calcula e devolve as faturas do período sem persistir nada. Aceita `format` opcional.
 
 ```
+curl -s -X POST http://localhost:3000/generate_invoices -H 'Content-Type: application/json' -d '{"month":1,"year":2022,"type":"accrual"}'
+```
+
+Resposta:
+
+```
+[{"date":"2022-01-01T13:00:00.000Z","amount":500}]
+```
+
+Com `format` csv:
+
+```
 curl -s -X POST http://localhost:3000/generate_invoices -H 'Content-Type: application/json' -d '{"month":1,"year":2022,"type":"accrual","format":"csv"}'
 ```
 
