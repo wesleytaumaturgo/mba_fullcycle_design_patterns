@@ -3,7 +3,9 @@
 //   1. params  - parâmetros da rota
 //   2. body    - corpo da requisição
 //   3. headers - cabeçalhos da requisição
-//   4. query   - query string, como objeto simples chave/valor de texto (sem tipo do framework)
+//   4. query   - query string, como o objeto chave/valor que o parser do Express produz (sem tipo
+//                próprio do framework); valores repetidos ou aninhados chegam na forma que o parser
+//                devolve, e cada rota converte o que precisa
 // Quando o callback devolve uma string, a resposta é texto puro; objeto ou array vão como JSON.
 export default interface HttpServer {
 	on (method: string, url: string, callback: Function): void;

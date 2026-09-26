@@ -170,11 +170,13 @@ sempre nesta ordem:
 1. `params` — parâmetros da rota
 2. `body` — corpo da requisição
 3. `headers` — cabeçalhos da requisição
-4. `query` — query string, como objeto simples chave/valor de texto
+4. `query` — query string, como o objeto chave/valor que o parser do Express produz
 
-O quarto argumento é a query string, e ela chega como objeto simples de strings: nenhum tipo do Express atravessa
-a fronteira da infra. Quem preenche esses quatro argumentos é o `ExpressAdapter`, o único ponto do projeto que
-conhece `req`/`res`.
+O quarto argumento é a query string, e ela chega como o objeto chave/valor que o parser do Express produz, sem
+tipo próprio do framework: nenhum tipo do Express atravessa a fronteira da infra. Valores repetidos ou aninhados
+chegam na forma que o parser devolve, e cada rota converte o que precisa. As rotas deste projeto usam chaves
+escalares (`month`, `year`, `type`, `format`), e o controller converte `month` e `year` com `Number()`.
+Quem preenche esses quatro argumentos é o `ExpressAdapter`, o único ponto do projeto que conhece `req`/`res`.
 
 Na mesma porta vale a convenção de resposta: quando o callback devolve uma string (caso do CSV), o adapter
 responde texto puro; quando devolve objeto ou array, mantém a serialização JSON de antes. Isso é o que permite
